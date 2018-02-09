@@ -11,6 +11,8 @@ using Microsoft.Extensions.Logging;
 using doLittle.Events;
 using Read;
 using Infrastructure.AspNet;
+using Newtonsoft.Json.Linq;
+using Concepts;
 
 namespace Web
 {
@@ -28,8 +30,34 @@ namespace Web
             _logger = logger;
         }
 
+        [HttpPost]
+        public void Add([FromRoute] UserType type, [FromBody] JObject command)
+        {
+            var id = Guid.NewGuid();
+            Apply(id, Deserialize(id, type, command));
+        }
+
+        public IEvent Deserialize(Guid id, UserType type, JObject command)
+        {
+            switch (type)
+            {
+                case UserType.Admin:
+                    var user = command.ToObject<AddAdminUser>();
+                    return new AdminUserAdded
+                    {
+                        Id = id,
+                        FirstName = user.FirstName,
+                        LastName = user.LastName,
+                        Email = user.Email,
+                        MobilePhoneNumberConfirmed = user.MobilePhoneNumberConfirmed
+                    };
+            }
+            return null;
+        }
+
+        // TODO, remove once frontend is updated
         [HttpPost("staffuser")]
-        public void Add([FromBody] AddStaffUser command)
+        public void OldAdd([FromBody] AddStaffUser command)
         {
             var id = Guid.NewGuid();
             Apply(id, new StaffUserAdded
